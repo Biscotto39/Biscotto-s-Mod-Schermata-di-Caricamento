@@ -342,6 +342,66 @@
 
         }
 
+        /* ============================== */
+        /* STILI PUBBLICITÀ (SCHERZO)     */
+        /* ============================== */
+
+        .ad-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ad-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .ad-badge {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 8px 16px;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 4px;
+            border-left: 4px solid #ffcc00;
+            pointer-events: none;
+            letter-spacing: 0.5px;
+        }
+
+        .skip-ad-btn {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            background: rgba(0, 0, 0, 0.82);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 12px 24px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .skip-ad-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
         @media (max-width: 768px) {
 
             .logo {
@@ -377,6 +437,17 @@
 
 
 <body>
+
+    <!-- ============================== -->
+    <!-- OVERLAY PUBBLICITÀ (SCHERZO)   -->
+    <!-- ============================== -->
+
+    <div id="adOverlay" class="ad-overlay" style="display: none;">
+        <div class="ad-badge">Pubblicità • 1 di 1</div>
+        <video id="adVideo" class="ad-video" preload="auto"></video>
+        <button id="skipAdBtn" class="skip-ad-btn" onclick="closeAd()">Salta Pubblicità</button>
+    </div>
+
 
     <!-- ============================== -->
     <!-- ORA IN RIPRODUZIONE            -->
@@ -473,6 +544,74 @@
     <script>
 
         /* ========================================= */
+        /* CONFIGURAZIONE PUBBLICITÀ CASUALE        */
+        /* ========================================= */
+
+        // Inserisci qui i nomi dei file video .mp4 presenti nella stessa cartella
+        const adVideos = [
+            "pubblicita1.mp4",
+            "pubblicita2.mp4"
+        ];
+
+        // Probabilità di comparsa della pubblicità ad ogni caricamento (0.5 = 50% di probabilità)
+        const CHANCE_OF_AD = 0.5;
+
+        // Ritardo (in millisecondi) prima di far apparire la pubblicità all'avvio
+        const AD_DELAY_MS = 1500;
+
+
+        const adOverlay = document.getElementById("adOverlay");
+        const adVideo = document.getElementById("adVideo");
+
+
+        function tryShowRandomAd() {
+            if (adVideos.length === 0) return;
+
+            // Estrazione casuale in base alla probabilità impostata
+            if (Math.random() < CHANCE_OF_AD) {
+                const randomIndex = Math.floor(Math.random() * adVideos.length);
+                const selectedVideo = adVideos[randomIndex];
+
+                // Mette in pausa la musica per evitare sovrapposizioni audio
+                if (!backgroundMusic.paused) {
+                    backgroundMusic.pause();
+                }
+
+                adVideo.src = selectedVideo;
+                adOverlay.style.display = "flex";
+
+                // Imposta un volume proporzionato a quello di gioco
+                adVideo.volume = backgroundMusic.volume || 0.35;
+
+                adVideo.play().catch(() => {
+                    // Se il browser blocca la riproduzione automatica, chiude l'overlay
+                    closeAd();
+                });
+            }
+        }
+
+
+        function closeAd() {
+            adVideo.pause();
+            adVideo.src = "";
+            adOverlay.style.display = "none";
+
+            // Riprende la musica di sottofondo
+            if (backgroundMusic.paused) {
+                backgroundMusic.play().catch(() => {});
+            }
+        }
+
+
+        // Chiude la pubblicità automaticamente quando il video finisce
+        adVideo.addEventListener("ended", closeAd);
+
+
+        // Tenta di avviare lo scherzo poco dopo il caricamento della pagina
+        setTimeout(tryShowRandomAd, AD_DELAY_MS);
+
+
+        /* ========================================= */
         /* MUSICA & PLAYLIST CASUALE (SHUFFLE POOL)  */
         /* ========================================= */
 
@@ -550,7 +689,8 @@
 
             if (
                 finalVolume > 0 &&
-                backgroundMusic.paused
+                backgroundMusic.paused &&
+                adOverlay.style.display === "none"
             ) {
                 backgroundMusic.play().catch(() => {});
             }
@@ -614,11 +754,14 @@
                 backgroundMusic.src = selectedSong;
                 backgroundMusic.load();
 
-                backgroundMusic
-                    .play()
-                    .catch(() => {
-                        // Gestione blocchi autoplay browser
-                    });
+                // Riproduce la canzone solo se l'overlay pubblicitario non è attivo
+                if (adOverlay.style.display === "none") {
+                    backgroundMusic
+                        .play()
+                        .catch(() => {
+                            // Gestione blocchi autoplay browser
+                        });
+                }
 
                 // Estrae il nome del file rimuovendo l'estensione finale (es. .mp3)
                 let cleanName =
@@ -657,7 +800,7 @@
         window.addEventListener(
             "load",
             () => {
-                if (backgroundMusic.paused) {
+                if (backgroundMusic.paused && adOverlay.style.display === "none") {
                     backgroundMusic.play().catch(() => {});
                 }
             }
@@ -666,7 +809,7 @@
         document.addEventListener(
             "click",
             () => {
-                if (backgroundMusic.paused) {
+                if (backgroundMusic.paused && adOverlay.style.display === "none") {
                     backgroundMusic.play().catch(() => {});
                 }
             }
@@ -675,7 +818,7 @@
         document.addEventListener(
             "keydown",
             () => {
-                if (backgroundMusic.paused) {
+                if (backgroundMusic.paused && adOverlay.style.display === "none") {
                     backgroundMusic.play().catch(() => {});
                 }
             }

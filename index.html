@@ -617,7 +617,7 @@
 
                 adVideo.oncanplay = function() {
                     adVideo.oncanplay = null;
-                    adVideo.volume = backgroundMusic.volume > 0 ? backgroundMusic.volume : 1.0;
+                    adVideo.volume = backgroundMusic.volume > 0 ? backgroundMusic.volume : 0.35;
 
                     const playPromise = adVideo.play();
                     if (playPromise !== undefined) {
